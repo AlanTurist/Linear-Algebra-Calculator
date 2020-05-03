@@ -11,7 +11,7 @@ R = int(input("Give number of rows: "))
 C = int(input("\nGive number of columns: "))
 
 # The user enters all the numbers of the matrix from the keyboard.
-print("\nInsert all the elements: ")
+print("\nInsert all the elements:\n ")
 num = list(map(int, input().split()))
 
 matrix = np.array(num).reshape(R, C)
@@ -67,6 +67,6 @@ np.identity(R)
 # Rank is equals with number of rows linearly independent
 from numpy.linalg import matrix_rank
 rk = matrix_rank(matrix) 
-print("\nRank is equals to: ",rk,)
+print("\nRank is: ",rk,)
 
 input('\n\n\nPress ENTER to exit')
