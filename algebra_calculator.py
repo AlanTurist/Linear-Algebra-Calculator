@@ -11,7 +11,7 @@ R = int(input("Give number of rows: "))
 C = int(input("\nGive number of columns: "))
 
 # The user enters all the numbers of the matrix from the keyboard.
-print("\nInsert all the elements:\n ")
+print("\nInsert all the elements: ")
 num = list(map(int, input().split()))
 
 matrix = np.array(num).reshape(R, C)
@@ -25,19 +25,19 @@ else:
 # If rows == columns det is calculated, otherwise no
 if R==C:
     det = np.linalg.det(matrix)
-    print("\nThe Determinant is equal: "'{0:.0f}'.format(det))
+    print("\nThe Determinant is: "'{0:.0f}'.format(det))
 else:
-    print("\nThe Determinant is equal: The matrix is not square!")
+    print("\nThe Determinant is: The matrix is not square!")
 
 # If inserted matrix is not square, trace is not calculated
 if R==C:
     tr = np.trace(matrix)
-    print("\nTrace is equals: ",tr,)
+    print("\nTrace is: ",tr,)
 else:
     print("\nTrace is equal: The matrix is not square!")
 
 trasp = matrix.transpose()
-print("\nThe Transpose of the matrix is equal:\n\n",trasp,)
+print("\nThe Transpose of the matrix is:\n\n",trasp,)
 
 # A matrix is invertible if its determinant is different from 0, otherwise no.
 if R==C and det != 0:
