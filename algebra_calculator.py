@@ -1,72 +1,93 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-print("Author: Georgios Koliou\nContact: georgios.koliou@gmail.com\n\n")
-
-# The library used for this purpose, Numpy
+from flask import Flask, render_template_string, request
 import numpy as np
 
-# Rows x Columns
-R = int(input("Give number of rows: "))
-C = int(input("\nGive number of columns: "))
+app = Flask(__name__)
 
-# The user enters all the numbers of the matrix from the keyboard.
-print("\nInsert all the elements:\n ")
-num = list(map(int, input().split()))
+# HTML template with Bootstrap for a prettier GUI
+FORM_HTML = '''
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>Matrix Analyzer</title>
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h1 class="h3 mb-0">Matrix Analyzer</h1>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="rows" class="form-label">Αριθμός γραμμών</label>
+              <input type="number" class="form-control" id="rows" name="rows" required min="1">
+            </div>
+            <div class="col-md-6">
+              <label for="cols" class="form-label">Αριθμός στηλών</label>
+              <input type="number" class="form-control" id="cols" name="cols" required min="1">
+            </div>
+          </div>
+          <div class="mt-3">
+            <label for="values" class="form-label">Τιμές μήτρας (χωρισμένες με κενά)</label>
+            <textarea class="form-control" id="values" name="values" rows="4" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-success mt-4">Ανάλυση</button>
+        </form>
+        {% if error %}
+          <div class="alert alert-danger mt-4">{{ error }}</div>
+        {% endif %}
+        {% if result %}
+          <hr>
+          <h2 class="h5 mt-4">Αποτελέσματα</h2>
+          <pre class="bg-light p-3 rounded shadow-sm">{{ result }}</pre>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+'''
 
-matrix = np.array(num).reshape(R, C)
-if R==C:
-    print("\nThe inserted matrix is square and is the following:\n\n",matrix,)
-else:
-    print("\nThe inserted matrix has dimensions (",R,"x",C,") and is the following:\n\n",matrix,)
+def analyze_matrix(R, C, values):
+    matrix = np.array(values).reshape(R, C)
+    lines = [f"Μήτρα ({R}x{C}):\n{matrix}", f"\nTranspose:\n{matrix.T}"]
 
-# This method calculates the determinant with LU factorization
-# The determinant is calculated only for square matrices
-# If rows == columns det is calculated, otherwise no
-if R==C:
-    det = np.linalg.det(matrix)
-    print("\nThe Determinant is: "'{0:.0f}'.format(det))
-else:
-    print("\nThe Determinant is: The matrix is not square!")
+    if R == C:
+        det = np.linalg.det(matrix)
+        tr = np.trace(matrix)
+        lines.append(f"\nDeterminant: {det:.2f}")
+        lines.append(f"Trace: {tr:.2f}")
+        if not np.isclose(det, 0):
+            inv = np.linalg.inv(matrix)
+            lines.extend([f"\nInverse:\n{inv}", f"\nVerification (A·A⁻¹):\n{matrix @ inv}", f"\nInvertible: {np.allclose(matrix @ inv, np.identity(R))}"])
+        else:
+            lines.append("\nΗ μήτρα δεν είναι αντιστρέψιμη (det = 0).")
+    else:
+        lines.append("\nΗ μήτρα δεν είναι τετράγωνη – ορισμένοι υπολογισμοί δεν εφαρμόζονται.")
 
-# If inserted matrix is not square, trace is not calculated
-if R==C:
-    tr = np.trace(matrix)
-    print("\nTrace is: ",tr,)
-else:
-    print("\nTrace is equal: The matrix is not square!")
+    lines.append(f"\nRank: {np.linalg.matrix_rank(matrix)}")
+    return "\n".join(lines)
 
-trasp = matrix.transpose()
-print("\nThe Transpose of the matrix is:\n\n",trasp,)
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        try:
+            R = int(request.form['rows'])
+            C = int(request.form['cols'])
+            values_str = request.form['values'].split()
+            if len(values_str) != R * C:
+                raise ValueError(f"Αναμένονταν {R*C} τιμές, δόθηκαν {len(values_str)}.")
+            values = list(map(float, values_str))
+            result = analyze_matrix(R, C, values)
+            return render_template_string(FORM_HTML, result=result)
+        except Exception as e:
+            return render_template_string(FORM_HTML, error=str(e))
+    return render_template_string(FORM_HTML)
 
-# A matrix is invertible if its determinant is different from 0, otherwise no.
-if R==C and det != 0:
-    from numpy.linalg import inv
-    inverse = inv(matrix)
-    print("\nDeterminant equal ",'{0:.0f}'.format(det),"!=0, therefore the matrix is invertible and its inverse is equal:\n\n",inverse,)
-    #print(colored("\nDeterminant equal ",'{0:.0f}'.format(det),"!=0, therefore the matrix is invertible and its inverse is equal:\n\n",'red'))
-    #print(inverse)
-    matver = np.matmul(matrix, inverse)    # VERIFICATION. A*A^-1 = I
-    print("\nVERIFICATION: Must be printed identity matrix (",R,"x",C,").\n\n",matver,)
-       
-elif R != C:
-    print("\nThe matrix is not invertible because: It is not square, has",R,"rows and",C,"columns\n")
-    
-else:
-    print("\nThe matrix is not invertible because its determinant is equal to 0.")
-
-x = np.identity(R)
-#diag = np.diag(matrice)
-if matver.any == x.any:
-    print('True')
-else:
-    print('False')
-
-np.identity(R)
-
-# Rank is equals with number of rows linearly independent
-from numpy.linalg import matrix_rank
-rk = matrix_rank(matrix) 
-print("\nRank is: ",rk,)
-
-input('\n\n\nPress ENTER to exit')
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
